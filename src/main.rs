@@ -14,16 +14,20 @@ use rand::distributions::{IndependentSample, Range};
 static WIDTH: u32 = 640;
 static HEIGHT: u32 = 480;
 
+static CELLWIDTH: f64 = 5.0;
+static CELLHEIGHT: f64 = 5.0;
+
 pub struct App {
     gl: GlGraphics, // OpenGL drawing backend.
     rotation: f64,   // Rotation for the square.
     world:Vec<Cell>
-
 }
 
 pub struct Cell {
     x:f64,
     y:f64,
+    height:f64,
+    width:f64,
     color: [f32; 4]
 }
 
@@ -31,7 +35,8 @@ impl App {
     fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
 
-        const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
+        const BROWN: [f32; 4] = [151.0/255.0, 67.0/255.0, 0.0, 1.0];
+        // const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
         const RED:   [f32; 4] = [1.0, 0.0, 0.0, 1.0];
 
         let square = rectangle::square(0.0, 0.0, 50.0);
@@ -42,16 +47,16 @@ impl App {
 
         self.gl.draw(args.viewport(), |c, gl| {
             // Clear the screen.
-            clear(GREEN, gl);
+            clear(BROWN, gl);
 
             let transform = c.transform.trans(x, y)
                                        .rot_rad(rotation)
                                        .trans(-25.0, -25.0);
-            
+
             for cell in world {
                 // println!("{:?}", (i as u32%WIDTH) as  f64);
                 rectangle(cell.color,
-                    [cell.x * 5.0, cell.y * 5.0, 5.0, 5.0],
+                    [cell.x * 5.0, cell.y * 5.0, cell.height, cell.width],
                     c.transform, gl);
             }
 
@@ -76,6 +81,7 @@ fn pick(a: i32, b: i32) -> i32 {
     between.ind_sample(&mut rng)
 }
 
+#[derive(PartialEq)]
 enum TYPE {
     NOTHING,
     PLANT,
@@ -101,8 +107,8 @@ fn main() {
 
     let mut world:Vec<Cell> = Vec::new();
 
-    for x in 0..(WIDTH/5){
-        for y in 0..(HEIGHT/5){
+    for x in 0..(WIDTH/CELLWIDTH as u32){
+        for y in 0..(HEIGHT/CELLHEIGHT as u32){
             // let type = pick(0, 200) as f32;
             let typee = match pick(0, 200) {
                 0 ... 150 => TYPE::NOTHING,
@@ -116,9 +122,10 @@ fn main() {
                 TYPE::PLANT =>  [0.0, 1.0, 0.0, 1.0],
                 TYPE::ANIMAL =>  [1.0, 0.3, 0.0, 1.0]
             };
-
-            let num = pick(0, 200) as f32;
-            world.push(Cell{color: color, x: x as f64, y: y as f64});
+            if typee != TYPE::NOTHING {
+                world.push(Cell{color: color, x: x as f64, y: y as f64, height: CELLHEIGHT, width: CELLWIDTH});
+            }
+            // let num = pick(0, 200) as f32;
         }
     }
 
